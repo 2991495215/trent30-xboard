@@ -14,6 +14,7 @@ This fork carries the production customizations used by `sub.zinc.run`.
 - `/api/v1/user/server/fetch` returns `online_total`, counting unique active account IDs from Redis cache DB1 keys matching `USER_ONLINE_CONN_*`.
 - The online count is part of the response ETag so changes are not hidden by a stale `304 Not Modified` response.
 - `/api/v1/user/server/machine` returns authorized machine status and bounded load history for a node visible to the current user's group.
+- Node list responses expose `machine_id`, and machine detail responses include authorized `related_nodes`, so all nodes on the same physical server can be grouped reliably.
 
 ## Image policy
 

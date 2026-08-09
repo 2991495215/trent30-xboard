@@ -25,7 +25,10 @@ class ServerController extends Controller
         }
         $onlineTotal = (new OnlineUserService())->count();
         $eTag = sha1(json_encode([
-            'servers' => array_column($servers, 'cache_key'),
+            'servers' => array_map(static fn ($server) => [
+                'cache_key' => $server['cache_key'] ?? null,
+                'machine_id' => $server['machine_id'] ?? null,
+            ], $servers),
             'online_total' => $onlineTotal,
         ]));
         if (strpos($request->header('If-None-Match', ''), $eTag) !== false ) {
@@ -57,6 +60,18 @@ class ServerController extends Controller
         }
 
         $machine = ServerMachine::find($server->machine_id);
+        $relatedNodes = collect(ServerService::getAvailableServers($request->user()))
+            ->filter(static fn ($item) => (int) ($item['machine_id'] ?? 0) === (int) $server->machine_id)
+            ->map(static fn ($item) => [
+                'id' => $item['id'],
+                'machine_id' => $item['machine_id'] ?? null,
+                'name' => $item['name'],
+                'type' => $item['type'],
+                'rate' => $item['rate'],
+                'is_online' => $item['is_online'],
+                'online' => $item['online'] ?? null,
+            ])
+            ->values();
         $query = ServerMachineLoadHistory::query()
             ->where('machine_id', $server->machine_id);
 
@@ -90,6 +105,7 @@ class ServerController extends Controller
                     'load_status' => $machine->load_status,
                 ] : null,
                 'history' => $history,
+                'related_nodes' => $relatedNodes,
             ],
         ]);
     }
