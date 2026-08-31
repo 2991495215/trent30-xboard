@@ -112,8 +112,17 @@ class ProtocolManager
                 $instanceForFlags = $reflection->newInstanceWithoutConstructor();
                 $flags = $instanceForFlags->flags;
 
-                if (collect($flags)->contains(fn($f) => stripos($flag, (string) $f) !== false)) {
-                    return $protocolClassString; // 返回类名字符串
+                $normalizedFlag = strtolower($flag);
+                $normalizedFlags = collect($flags)->map(fn($f) => strtolower((string) $f))->filter();
+
+                if ($normalizedFlags->contains($normalizedFlag)) {
+                    return $protocolClassString; // 精确匹配优先
+                }
+
+                if ($normalizedFlags
+                    ->sortByDesc(fn($f) => strlen($f))
+                    ->contains(fn($f) => stripos($normalizedFlag, $f) !== false)) {
+                    return $protocolClassString; // 兼容旧的模糊匹配，但长标识优先
                 }
             } catch (\ReflectionException $e) {
                 report($e); // Consider logging this error
