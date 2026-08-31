@@ -11,7 +11,10 @@ class OnlineUserService
      */
     public function count(): int
     {
-        $keys = Redis::connection('cache')->keys('*USER_ONLINE_CONN_*');
+        $keys = array_merge(
+            Redis::connection('cache')->keys('*USER_ONLINE_CONN_*'),
+            Redis::keys('user_devices:*')
+        );
 
         return count(self::extractUserIds($keys));
     }
@@ -25,7 +28,7 @@ class OnlineUserService
         $userIds = [];
 
         foreach ($keys as $key) {
-            if (preg_match('/(\d+)$/', $key, $matches)) {
+            if (preg_match('/(?:USER_ONLINE_CONN_.+_|user_devices:)(\d+)$/', $key, $matches)) {
                 $userIds[(int) $matches[1]] = true;
             }
         }
